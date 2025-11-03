@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 /* compile commands
 linux: cc -std=c99 -Wall parsing.c mpc.c -ledit -lm -o parsing
 windows: cc -std=c99 -Wall parsing.c mpc.c -o parsing
@@ -195,12 +195,27 @@ lval* lval_eval_sexpr(lval* v) {
 
 lval* lval_eval(lval* v) {
 	lval* result;
+	// Evaluate s-expression
 	if (v->type == LVAL_SEXPR) {
 		result = lval_eval_sexpr(v);
 	} else {
+		// Evaluate others directly
 		result = v;
 	}
 	return result;
+}
+3
+abcdefghijklmnopqrstuvwxyz
+// Pops a lval from a s-expression
+lval* lval_pop(lval* v, int i) {
+	lval* popped_lval = v->cell[i];
+	// Decrease amount of items in s-expression
+	v->count--;
+	memmove(&v->cell[i], v->cell[i+1], sizeof(lval*) * (v->count-i));
+}
+
+lval* lval_take() {
+	
 }
 // Forward declarations
 void lval_print(lval* v);

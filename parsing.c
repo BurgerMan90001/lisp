@@ -58,7 +58,6 @@ typedef struct lval {
 	int count;
 	struct lval** cell;
 } lval;
-
 /*
 Constructor for number lval pointer.
 Converts long to lval number

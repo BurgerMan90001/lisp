@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 /* compile commands
 linux: cc -std=c99 -Wall parsing.c mpc.c -ledit -lm -o parsing
 windows: cc -std=c99 -Wall parsing.c mpc.c -o parsing
@@ -164,6 +164,7 @@ lval* lval_read(mpc_ast_t* tree) {
 lval* lval_eval(lval* v);
 lval* lval_take(lval* v, int i);
 lval* lval_pop(lval* v, int i);
+lval* builtin_op(lval* a, char* operation);
 
 lval* lval_eval_sexpr(lval* v) {
 	// Evaluate children
@@ -230,10 +231,21 @@ lval* lval_take(lval* v, int i) {
 	lval_del(v);
 	return result;
 }
-
+bool isAddition(char* operatation) {
+	return strcmp(operatation, "+") == 0 || strcmp(operatation, "add") == 0;
+}
+bool isSubtraction(char* operatation) {
+	return strcmp(operatation, "-") == 0 || strcmp(operatation, "sub") == 0;
+}
+bool isMultiplication(char* operatation) {
+	return strcmp(operatation, "*") == 0 || strcmp(operatation, "mul") == 0;
+}
+bool isDivision(char* operatation) {
+	return strcmp(operatation, "/") == 0 || strcmp(operatation, "div") == 0;
+}
 lval* builtin_op(lval* a, char* operation) {
 	// Check if all aruments are numbers
-	for (int i = 0; i->count; i++) {
+	for (int i = 0; i < a->count; i++) {
 		if (a->cell[i]->type != LVAL_NUM) {
 			lval_del(a);
 			return lval_err("Can't operate on a non-number");
@@ -243,13 +255,28 @@ lval* builtin_op(lval* a, char* operation) {
 	lval* x = lval_pop(a, 0);
 	
 	// If there are no other elements and operator is -
-	if (a->count == 0 && strcmp(op, "-")) {
+	if (a->count == 0 && isSubtraction(operation)) {
 		// negate number
 		x->num *= -1;
 	}
 	
 	while (a->count > 0) {
-		
+		lval* y = lval_pop(a, 0);
+		if (isAddition(operation)) { x->num += y->num ; }
+		if (isSubtraction(operation)) { x->num  -= y->num ; }
+		if (isMultiplication(operation)) { x->num *= y->num; }
+		if (isDivision(operation)) { 
+			// if denominator is 0
+			if (y->num == 0) {
+				lval_del(x);
+				lval_del(y);
+				x = lval_err("Can't divide by zero");
+				break;
+			} else {
+				x->num /= y->num;
+			}
+		}
+		lval_del(y);
 	}
 	return x;
 }
@@ -303,69 +330,8 @@ int number_of_nodes(mpc_ast_t* tree) {
 	return 0;
 }
 */
-bool isAddition(char* operator) {
-	return strcmp(operator, "+") == 0 || strcmp(operator, "add") == 0;
-}
-bool isSubtraction(char* operator) {
-	return strcmp(operator, "-") == 0 || strcmp(operator, "sub") == 0;
-}
-bool isMultiplication(char* operator) {
-	return strcmp(operator, "*") == 0 || strcmp(operator, "mul") == 0;
-}
-bool isDivision(char* operator) {
-	return strcmp(operator, "/") == 0 || strcmp(operator, "div") == 0;
-}
-/*
-lval eval_op(lval x, char* operator, lval* y) {
-	// If either value is an error return it
-	if (x.type == LVAL_ERR) { return x; }
-	if (y.type == LVAL_ERR) { return y; }
-	
-	// strcmp checks for string equality
-	if (isAddition(operator)) { return lval_num(x.num + y.num ); }
-	if (isSubtraction(operator)) { return lval_num(x.num  - y.num ); }
-	if (isMultiplication(operator)) { return lval_num(x.num  * y.num ); }
-	if (isDivision(operator)) { 
-		// if denominator is 0
-		if (y.num == 0) {
-			// return a division by zero error
-			return lval_err(LERR_DIV_ZERO);
-		}
-		return lval_num(x.num  / y.num);
-	}
-	return lval_err(LERR_BAD_OP);
-}
-*/
-/*
-lval* eval(mpc_ast_t* tree) {
-	// If tagged as a number, return it
-	if (strstr(tree->tag, "number")) {
-		lval* v;
-		errno = 0;
-		long x = strtol(tree->contents, NULL, 10);
-		// If theres not an error in conversion
-		if (errno != ERANGE) {
-			v = lval_num(x);
-		} else {
-			v = lval_err(LERR_BAD_NUM);
-		}
-		return v;
-	}
-	
-	// Second child is the operator
-	char* operator = tree->children[1]->contents;
-	
-	// Third child is x
-	lval x = eval(tree->children[2]);
-	// Rest of the children are iterated
-	int i = 3;
-	while(strstr(tree->children[i]->tag, "expr")) {
-		x = eval_op(x, operator, eval(tree->children[i]));
-		i++;
-	}
-	return x;
-}
-*/
+
+
 int main(int argc, char** argv) {
 	// Parsers
 	mpc_parser_t* Number = mpc_new("number");
@@ -400,18 +366,11 @@ int main(int argc, char** argv) {
 		mpc_result_t r;
 		
 		// If parsing sucessful
-		
 		if (mpc_parse("<stdin>", input, Lispy, &r)) {
 			
-			//lval* x = lval_read(r.output);
-			lval* x = lval_read(r.output);
+			lval* x = lval_eval(lval_read(r.output));
 			lval_println(x);
 			lval_del(x);
-			//lval_println(x);
-			//lval_del(x);
-			//lval result = eval(r.output);
-			//lval_println(result);
-			//mpc_ast_delete(r.output);
 		} else {
 			// Else, print error
 			//mpc_err_print(r.error);

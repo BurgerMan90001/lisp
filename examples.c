@@ -1,5 +1,5 @@
 
-/*
+
 // Adjective parser
 mpc_parser_t* Adjective = mpc_or(4,
 	mpc_sym("wow"), mpc_sym("many"),
@@ -16,7 +16,7 @@ mpc_parser_t* Phrase = mpc_and(2, mpcf_strfold,
 	Adjective, Noun, free);
 
 mpc_parser_t* Doge = mpc_many(mpcf_strfold, Phrase);
-*/
+
 // Create rules
 mpc_parser_t* Adjective = mpc_new("adjective");
 mpc_parser_t* Noun = mpc_new("noun");
@@ -35,6 +35,5 @@ mpca_lang(MPCA_LANG_DEFAULT,
 	",
 	Adjective, Noun, Phrase, Doge);
 	
-// parserti
 
 mpc_cleanup(4, Adjective, Noun, Phrase, Doge);

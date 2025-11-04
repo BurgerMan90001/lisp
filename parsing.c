@@ -204,17 +204,24 @@ lval* lval_eval(lval* v) {
 	}
 	return result;
 }
-3
-abcdefghijklmnopqrstuvwxyz
+
 // Pops a lval from a s-expression
 lval* lval_pop(lval* v, int i) {
 	lval* popped_lval = v->cell[i];
+	
 	// Decrease amount of items in s-expression
 	v->count--;
-	memmove(&v->cell[i], v->cell[i+1], sizeof(lval*) * (v->count-i));
+	
+	// Shift memory after the item at i over the top
+	memmove(&v->cell[i], &v->cell[i+1], sizeof(lval*) * (v->count-i));
+	
+	// Reallocate memory
+	v->cell = malloc(v->cell, sizeof(*lval) * v->count);
+	
+	return popped_lval;
 }
-
-lval* lval_take() {
+// Takes a lval from a s-expression and deletes the s-expression
+lval* lval_take(lval* v, int i) {
 	
 }
 // Forward declarations

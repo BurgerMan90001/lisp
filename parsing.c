@@ -31,8 +31,15 @@ void add_history(char* unused) {}
 // Else, include editline headers
 #else
 #include <editline/readline.h>
+// mac X does not have history file
 //#include <editline/history.h>
 #endif
+// Error condition
+#define LASSERT(args, cond, err) \
+	if (!(cond)) { \
+		lval_del(args); \
+		return lval_err(err); \
+	}
 
 // lisp value types
 enum {
@@ -79,6 +86,8 @@ lval* lval_err(char* m) {
 	v->type = LVAL_ERR;
 	// Allocate strlen + 1 for null terminator
 	v->err = malloc(strlen(m) + 1);
+	// Copies the error message string to v->err
+	strcpy(v->err, m);
 	return v;
 }
 /*
@@ -90,7 +99,7 @@ lval* lval_sym(char* s) {
 	lval* v = malloc(sizeof(lval));
 	v->type = LVAL_SYM;
 	v->sym = malloc(strlen(s) + 1);
-	// Copies string s to allocated v->sym
+	// Copies the string s to v->sym
 	strcpy(v->sym, s);
 	return v;
 }
@@ -182,6 +191,8 @@ lval* lval_take(lval* v, int i);
 lval* lval_pop(lval* v, int i);
 lval* builtin_op(lval* a, char* operation);
 
+lval* builtin(lval* arg, char* func);
+
 lval* lval_eval_sexpr(lval* v) {
 	// Evaluate children
 	for (int i = 0; i < v->count; i++) {
@@ -207,9 +218,9 @@ lval* lval_eval_sexpr(lval* v) {
 		// Delete first element and its expression
 		lval_del(firstElement);
 		lval_del(v);
-		return lval_err("s-pression does not start with a symbol!");
+		return lval_err("s-epression does not start with a symbol!");
 	}
-	lval* result = builtin_op(v, firstElement->sym);
+	lval* result = builtin(v, firstElement->sym);
 	lval_del(firstElement);
 	return result;
 }
@@ -247,6 +258,15 @@ lval* lval_take(lval* v, int i) {
 	lval_del(v);
 	return result;
 }
+// Moves all lvals from y to x
+lval* lval_join(lval* x, lval* y) {
+	// Each cell in y is added to x
+	while (y->count) {
+		x = lval_add(x, lval_pop(y, 0));
+	}
+	lval_del(y);
+	return x;
+}
 
 bool isAddition(char* operatation) {
 	return strcmp(operatation, "+") == 0 || strcmp(operatation, "add") == 0;
@@ -259,6 +279,86 @@ bool isMultiplication(char* operatation) {
 }
 bool isDivision(char* operatation) {
 	return strcmp(operatation, "/") == 0 || strcmp(operatation, "div") == 0;
+}
+
+lval* builtin_head(lval* arg) {
+	// Error checking conditions
+	LASSERT(arg, arg->count == 1,
+		"'head' function has too many arguments!");
+	LASSERT(arg, arg->cell[0]->type == LVAL_QEXPR,
+		"'head' function passed the incorrect type!");
+	LASSERT(arg, arg->cell[0]->count != 0,
+		"'head' function passed {}!");
+	
+	// Else, take first arguement / head
+	lval* v = lval_take(arg, 0);
+	// Delete everything except for head and return
+	while (v->count > 1) {
+		lval_del(lval_pop(v,1));
+	}
+	return v;
+}
+lval* builtin_tail(lval* arg) {
+	// Error checking conditions
+	LASSERT(arg, arg->count == 1,
+		"'tail' function has too many arguments!");
+	LASSERT(arg, arg->cell[0]->type == LVAL_QEXPR,
+		"'tail' function passed the incorrect type!");
+	LASSERT(arg, arg->cell[0]->count != 0,
+		"'tail' function passed {}!");
+	
+	// Else, take first arguement
+	lval* v = lval_take(arg, 0);
+	// Delete first element and return
+	lval_del(lval_pop(v, 0));
+	return v;
+}
+// Converts a q-expression to a s-expression
+lval* builtin_list(lval* arg) {
+	arg->type = LVAL_QEXPR;
+	return arg;
+}
+// Converts a q-expression to a s-expression and evaluates it
+lval* builtin_eval(lval* arg) {
+	LASSERT(arg, arg->count == 1,
+		"'eval' function has too many arguments!");
+	LASSERT(arg, arg->cell[0]->type == LVAL_QEXPR,
+		"'eval' function passed the incorrect type!");
+	// Take first arguement and convert to s-expression
+	lval* x = lval_take(arg, 0);
+	x->type = LVAL_SEXPR;
+	// Evaluate
+	lval* result = lval_eval(x);
+	return result;
+}
+
+lval* builtin_join(lval* arg) {
+	// Check that all arguments are q-expressions
+	for (int i = 0; i < arg->count; i++) {
+		LASSERT(arg, arg->cell[i]->type == LVAL_QEXPR,
+			"'join' function passed the incorrect type!");
+	}
+	lval* x = lval_pop(arg, 0);
+	
+	// Do until the arg is empty
+	while (arg->count) {
+		// Pop the first value from arg and put them into x 
+		lval* y = lval_pop(arg, 0);
+		x = lval_join(x, y);
+	}
+	lval_del(arg);
+	return x;
+	
+}
+lval* builtin(lval* arg, char* func) {
+	if (strcmp("list", func) == 0) { return builtin_list(arg); }
+	if (strcmp("head", func) == 0) { return builtin_head(arg); }
+	if (strcmp("tail", func) == 0) { return builtin_tail(arg); }
+	if (strcmp("join", func) == 0) { return builtin_join(arg); }
+	if (strcmp("eval", func) == 0) { return builtin_eval(arg); }
+	if (strstr("+-/*", func)) { return builtin_op(arg, func); }
+	lval_del(arg);
+	return lval_err("Unknown function");
 }
 lval* builtin_op(lval* a, char* operation) {
 	// Check if all aruments are numbers
@@ -297,6 +397,8 @@ lval* builtin_op(lval* a, char* operation) {
 	}
 	return x;
 }
+
+
 // Forward declarations
 void lval_print(lval* v);
 
@@ -330,30 +432,7 @@ void lval_println(lval* v) {
 	putchar('\n');
 }
 
-mpc_parser_t* define() {
-	// Parsers
-	mpc_parser_t* Number = mpc_new("number");
-	mpc_parser_t* Symbol = mpc_new("symbol");
-	mpc_parser_t* Sexpr = mpc_new("sexpr");
-	mpc_parser_t* Qexpr = mpc_new("qexpr");
-	mpc_parser_t* Expr = mpc_new("expr");
-	mpc_parser_t* Lispy = mpc_new("lispy");
 
-	// Define the language
-	mpca_lang(MPCA_LANG_DEFAULT,
-		"                                                   \
-		number   : /-?[0-9]+/;                             \
-		symbol : '+' | '-' | '*' | '/' |                   \
-		 \"add\" | \"sub\" | \"mul\" | \"div\" |           \
-		 \"list\" | \"head\" | \"tail\" | \"join\" | \"eval\";  \
-		sexpr : '(' <expr>* ')';                    \
-		qexpr : '{' <expr>* '}';                    \
-		expr     : <number> | <symbol> | <sexpr> | <qexpr>;  \
-		lispy    : /^/ <expr>+ /$/ ;             \
-	  ",
-	  Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
-	return Lispy;
-}
 int main(int argc, char** argv) {
 	// Parsers
 	mpc_parser_t* Number = mpc_new("number");
@@ -362,10 +441,7 @@ int main(int argc, char** argv) {
 	mpc_parser_t* Qexpr = mpc_new("qexpr");
 	mpc_parser_t* Expr = mpc_new("expr");
 	mpc_parser_t* Lispy = mpc_new("lispy");
-
-	// Define the language
-	mpca_lang(MPCA_LANG_DEFAULT,
-		"                                                   \
+	const char* language = "                               \
 		number   : /-?[0-9]+/;                             \
 		symbol : '+' | '-' | '*' | '/' |                   \
 		 \"add\" | \"sub\" | \"mul\" | \"div\" |           \
@@ -374,7 +450,9 @@ int main(int argc, char** argv) {
 		qexpr : '{' <expr>* '}';                    \
 		expr     : <number> | <symbol> | <sexpr> | <qexpr>;  \
 		lispy    : /^/ <expr>+ /$/ ;             \
-	  ",
+	  ";
+	// Define the language
+	mpca_lang(MPCA_LANG_DEFAULT, language,
 	  Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
 	puts("Lispy Version 0.0.1");
 	puts("Press Ctrl+c to Exit\n");
@@ -391,7 +469,6 @@ int main(int argc, char** argv) {
 		
 		// If parsing sucessful
 		if (mpc_parse("<stdin>", input, Lispy, &r)) {
-			
 			lval* x = lval_eval(lval_read(r.output));
 			lval_println(x);
 			lval_del(x);
@@ -402,9 +479,9 @@ int main(int argc, char** argv) {
 		}
 	}
 	
-	/* Undefine and Delete our Parsers */
+	// Undefine and delete parsers 
 	mpc_cleanup(6, Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
-
+	
 	return 0;
 }
 

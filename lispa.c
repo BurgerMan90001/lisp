@@ -710,11 +710,12 @@ lval* builtin_join(lenv* e, lval* arg) {
 	lval* x = lval_pop(arg, 0);
 	
 	// Do until the arg is empty
-	while (arg->count) {
+	while (arg->count > 0) {
 		// Pop the first value from arg and put them into x 
 		lval* y = lval_pop(arg, 0);
 		x = lval_join(x, y);
 	}
+	
 	lval_del(arg);
 	return x;
 }

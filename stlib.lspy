@@ -1,0 +1,109 @@
+
+; atoms
+(def {nil} {})
+(def {true} 1)
+(def {false} 0)
+
+; Function Definitions
+(def {func} (\ {f b} {
+  def (head f) (\ (tail f) b)
+}))
+
+; Pack list function
+(func {pack f & xs} {f xs})
+
+; Unpack list function
+(func {unpack f l} {
+    eval (join (list f) l)
+})
+
+; Curring aliases
+(def {curry} unpack)
+(def {uncurry} pack)
+
+; Perform things in sequence
+(func {do & list} {
+    if (== list nil)
+    {nil}
+    {last list}
+})
+; Open new scope
+(func {let b} {
+    ((\ {_} b) ())
+})
+
+; Logical functions
+(func {not x} {- 1 x})
+(func {or x y} {+ x y})
+(func {and x y} {* x y})
+
+; Gets the first, second, or third item in a list
+(func {first list} { eval (head list) })
+(func {second list} { eval (head (tail list)) })
+(func {third list} { eval (head (tail (tail list))) })
+
+; Get the length of a list
+(func {len list} {
+    ; If the list is empty
+    if (== list nil)
+        {0}
+        ; Otherwise, increment length and 
+        ; recurse with list length - 1 until empty.
+        {+ 1 (len (tail list))}
+})
+
+; Get the nth item in a list
+(func {nth n list} {
+    if (== n 0)
+        ; Get first item in list
+        {first list}
+        ; Get last item in list and recurse
+        {nth (- n 1) (tail list)}
+})
+
+; Get the last item in a list
+(func {last list} {
+    {nth (- (len list) 1) list}
+})
+; Take n items from list
+(func {take n list} {
+    if (== n 0) 
+        {nil}
+        {join (head list) (take (- n 1) (tail list))}
+})
+; Drop n items from list
+(func {drop n list} {
+    if (== n 0)
+        {list}
+        {drop (- n 1) (tail list)}
+})
+
+; Splits a list at n
+(func {split n list} {
+    {list (take n list) (drop n list)}
+})
+
+; Checks if an element exsists in a list
+(func {contains x list} {
+    if (== list nil)
+        {false}
+        {if (== x (first list)) 
+            {contains x (tail list)}}
+})
+; Apply a function to a list
+(func {map func list} {
+    if (== list nil)
+        {nil}
+        {join (list (func (first list)) (map func (tail list)) )}
+})
+
+; Apply a filter to a list
+(func {filter f list} {
+    if (== list nil)
+        {nil}
+        {join (if (f (first list)) {head list} {nil}) (filter f (tail list))}
+})
+
+;(print (filter (\ {x} {> x 2}) {5 2 11 -7 8 1}))
+
+(print (map - {5 6 7 8 2 22 44}))

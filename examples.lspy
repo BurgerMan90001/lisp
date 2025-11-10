@@ -1,0 +1,8 @@
+
+
+(def {x} 100)
+(print "hello world")
+(if (> x 10) {print "hsehe"} {print "wwwww"})  
+
+
+; use a semicolon for single-line comments

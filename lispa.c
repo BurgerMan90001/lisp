@@ -1002,21 +1002,20 @@ lval* builtin_load(lenv* env, lval* arg) {
 	if (mpc_parse_contents(arg->cell[0]->str, Lispy, &result)) {
 		// Read contents
 		lval* expression = lval_read(result.output);
+		//char* result.error->filename;
 		mpc_ast_delete(result.output);
 		
-		int line_num = 1;
 		// Evaluate each expression
-		while (expression->count) {
-			lval* x = lval_eval(env, lval_pop(expression, 0));
+		while (expression->count > 0) {
+			lval* result = lval_eval(env, lval_pop(expression, 0));
 			// If there is an error, print it
-			if (x->type == LVAL_ERR) {
-				printf("ln:%i, ", line_num);
-				lval_println(x);
+			if (result->type == LVAL_ERR) {
+				lval_println(result);
 				
 			}
-			lval_del(x);
-			line_num++;
+			lval_del(result);
 		}
+		
 		// Delete arguements and expressions
 		lval_del(expression);
 		lval_del(arg);
@@ -1110,13 +1109,13 @@ void lenv_add_builtins(lenv* e) {
 	lenv_builtin_add(e, "error", builtin_error);
 }
 
-void lval_expr_print(lval* v, char open, char close) {
+void lval_expr_print(lval* val, char open, char close) {
 	putchar(open);
-	for (int i = 0; i < v->count; i++) {
+	for (int i = 0; i < val->count; i++) {
 		// Print value inside
-		lval_print(v->cell[i]);
+		lval_print(val->cell[i]);
 		// Put whitespace for all except for last element
-		if (i != (v->count-1)) {
+		if (i != (val->count-1)) {
 			putchar(' ');
 		}
 	}

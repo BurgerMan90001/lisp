@@ -91,10 +91,10 @@
             {contains x (tail list)}}
 })
 ; Apply a function to a list
-(func {map func list} {
-    if (== list nil)
+(func {map f l} {
+    if (== l nil)
         {nil}
-        {join (list (func (first list)) (map func (tail list)) )}
+        {join (list (f (first l))) (map f (tail l))}
 })
 
 ; Apply a filter to a list
@@ -104,6 +104,39 @@
         {join (if (f (first list)) {head list} {nil}) (filter f (tail list))}
 })
 
-;(print (filter (\ {x} {> x 2}) {5 2 11 -7 8 1}))
+(func {select & cs} {
+    if (== cs nil)
+        {error "No selection found"}
+        {if (first (first cs))
+            {second (first cs)}
+            {unpack select (tail cs)}
+        }
+})
 
-(print (map - {5 6 7 8 2 22 44}))
+; Default case
+(func {default} true)
+
+(func {switch x & cs} {
+    if (== cs nil)
+        {error "No case found"}
+        {if (== x (first (first cs))) {second (first cs)} {
+      unpack switch (join (list x) (tail cs))}}
+})
+
+;(- ((unpack *) {2 2}))
+;(print (unpack * {2 2}))
+
+(def {x} 0)
+
+(func {day-name x} {
+  switch x
+    {0 "Monday"}
+    {1 "Tuesday"}
+    {2 "Wednesday"}
+    {3 "Thursday"}
+    {4 "Friday"}
+    {5 "Saturday"}
+    {6 "Sunday"}
+})
+
+(day-name {0})

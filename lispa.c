@@ -156,14 +156,6 @@ struct lenv {
 		"Got %s, Expected %s", \
 		func, ltype_name(got), ltype_name(expected)); \
 }
-/*
-#define LASSERT_COUNT(args, got, expected, func) { \
-	bool cond = got == expected; \
-	LASSERT(args, cond, "'%s' . " \
-		"Got is, Expected %i", \
-		func, got, expected); \
-}
-*/
 
 // lisp value types
 enum lval_types {

@@ -3,7 +3,7 @@
 A simple lisp programming language.
 
 
-## Compiling
+## Compiling and Running
 
 ### Compile Comand on Windows
 ```sh
@@ -14,8 +14,7 @@ cc -std=c99 -Wall lispa.c mpc.c -o lispa
 ```sh
 cc -std=c99 -Wall lispa.c mpc.c -ledit -lm -o lispa
 ```
-
-## Running
+Then run lispa in the same file directory
 
 ### Run using the command line interface
 ```sh

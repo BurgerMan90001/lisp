@@ -1188,6 +1188,7 @@ void load_files(lenv* env, int argc, char** argv) {
 		lval_println(result);
 		// If there is an error, print it
 		if (result->type == LVAL_ERR) {
+			printf("%s\n", argv[i]);
 			lval_println(result);
 			lval_del(result);
 		}
@@ -1203,12 +1204,20 @@ int main(int argc, char** argv) {
 	Expr = mpc_new("expr");
 	Lispy = mpc_new("lispy");
 
+	lval* standard_lib = lval_add(lval_sexpr(), lval_str("stlib.lspy"));
+
 	// Define the language
 	mpca_lang(MPCA_LANG_DEFAULT, language,
 	  Number, Symbol, String, Comment, Sexpr, Qexpr, Expr, Lispy);
 	  
 	lenv* env = lenv_new();
+	// Add builtin functions to environment
 	lenv_add_builtins(env);
+
+	// Load the standard library
+	builtin_load(env, standard_lib);
+	// Delete it after loading into envrionment
+	lval_del(standard_lib);
 
 	// If there is 1 or more files
 	if (argc >= 2) {
@@ -1218,8 +1227,10 @@ int main(int argc, char** argv) {
 	else if (argc == 1) {
 		prompt(env);
 	}
+	
 	// Delete environment
 	lenv_del(env);
+	
 	
 	// Undefine and delete parsers 
 	mpc_cleanup(8, Number, Symbol, String, 

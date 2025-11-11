@@ -2,6 +2,9 @@
 
 A simple lisp programming language.
 
+
+## Compiling
+
 ### Compile Comand on Windows
 ```sh
 cc -std=c99 -Wall lispa.c mpc.c -o lispa
@@ -10,6 +13,18 @@ cc -std=c99 -Wall lispa.c mpc.c -o lispa
 
 ```sh
 cc -std=c99 -Wall lispa.c mpc.c -ledit -lm -o lispa
+```
+
+## Running
+
+### Run using the command line interface
+```sh
+./lispa
+```
+
+### Run a file
+```sh
+./lispa ./filename
 ```
 
 ## Examples

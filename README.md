@@ -3,19 +3,19 @@
 A simple lisp programming language.
 
 ### Compile Comand on Windows
-``` sh
+```sh
 cc -std=c99 -Wall lispa.c mpc.c -o lispa
 ```
 ### Compile Comand on Linux / Mac
 
-``` sh
+```sh
 cc -std=c99 -Wall lispa.c mpc.c -ledit -lm -o lispa
 ```
 
 ## Examples
 
 #### Comments
-``` lspa
+```
 ; use a semicolon for single-line comments
 ```
 #### Variable definitions

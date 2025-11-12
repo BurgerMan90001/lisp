@@ -36,4 +36,10 @@
     {6 "Sunday"}
 })
 
-;(print (day-name 2))
+(print (day-name 2))
+
+(func {get_sum x y}
+    {+ x y}
+)
+
+(print (get_sum 3 4))

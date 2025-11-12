@@ -46,9 +46,7 @@ char* ltype_name(int type);
 
 lval* lval_err(char* fmt, ...);
 
-lval* builtin_op(lenv* e, lval* a, char* operation);
-
-//lval* builtin(lenv* env, lval* arg, char* func);
+lval* builtin_op(lenv* env, lval* arg, char* operation);
 
 lval* builtin_list(lenv* env, lval* arg);
 lval* builtin_head(lenv* env, lval* arg); 
@@ -60,7 +58,7 @@ lval* builtin_var(lenv* env, lval* arg, char* func);
 // lbuiltin function pointer
 typedef lval*(*lbuiltin)(lenv*, lval*);
 
-lval* lval_eval(lenv* e, lval* v);
+lval* lval_eval(lenv* env, lval* v);
 lval* lval_take(lval* v, int i);
 lval* lval_pop(lval* v, int i);
 void lval_del(lval* v);
@@ -170,10 +168,7 @@ enum lval_types {
 
 // LVAL TYPES CONSTRUCTORS
 
-/*
-Constructor for number lval pointer.
-Converts long to lval number
-*/
+/* Constructor for number lval pointer. Converts long to lval number. */
 lval* lval_num(long num) {
 	lval* v = malloc(sizeof(lval));
 	v->type = LVAL_NUM;
